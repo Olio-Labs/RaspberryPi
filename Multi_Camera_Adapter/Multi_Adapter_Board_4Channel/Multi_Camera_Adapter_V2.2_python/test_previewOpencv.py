@@ -2,29 +2,32 @@
 from ast import Try
 from PyQt5.QtWidgets import QLabel, QHBoxLayout, QVBoxLayout, QApplication, QWidget
 from picamera2 import Picamera2
-from PyQt5.QtGui import QImage,QPixmap
+from PyQt5.QtGui import QImage,QPixmap, QPainter, QColor, QFont
 from PyQt5.QtCore import QThread
 import RPi.GPIO as gp
 import time
 import os
 
-width = 320
-height = 240 
+width = 640
+height = 480 
 
 adapter_info = {  
     "A" : {   
         "i2c_cmd":"i2cset -y 10 0x70 0x00 0x04",
         "gpio_sta":[0,0,1],
-    }, "B" : {
+        }, 
+    "B" : {
         "i2c_cmd":"i2cset -y 10 0x70 0x00 0x05",
         "gpio_sta":[1,0,1],
-    }, "C" : {
+        },
+    "C" : {
         "i2c_cmd":"i2cset -y 10 0x70 0x00 0x06",
         "gpio_sta":[0,1,0],
-    },"D" : {
-        "i2c_cmd":"i2cset -y 10 0x70 0x00 0x07",
-        "gpio_sta":[1,1,0],
-    }
+        },
+    #"D" : {
+     #   "i2c_cmd":"i2cset -y 10 0x70 0x00 0x07",
+     #   "gpio_sta":[1,1,0],
+    #}
 }
 
 class WorkThread(QThread):
@@ -58,7 +61,7 @@ class WorkThread(QThread):
 
         flag = False
 
-        for item in {"A","B","C","D"}:
+        for item in {"A", "B", "C"}: #,"B","C","D"}:
             try:
                 self.select_channel(item)
                 self.init_i2c(item)
@@ -70,7 +73,7 @@ class WorkThread(QThread):
                     # time.sleep(0.5) 
                 print("init1 "+ item)
                 picam2 = Picamera2()
-                picam2.configure(picam2.create_still_configuration(main={"size": (320, 240),"format": "BGR888"},buffer_count=2)) 
+                picam2.configure(picam2.create_still_configuration(main={"size": (640, 480),"format": "BGR888"},buffer_count=2)) 
                 picam2.start()
                 time.sleep(2)
                 picam2.capture_array(wait=False)
@@ -78,15 +81,28 @@ class WorkThread(QThread):
             except Exception as e:
                 print("except: "+str(e))
 
-        while True:
-            for item in {"A","B","C","D"}:
+        t = time.time()
+        this = True
+        while this:
+            
+            for item in {"A", "B", "C"}: #,"B","C","D"}:
                 self.select_channel(item)
                 time.sleep(0.02)
                 try:
+                    #buf = picam2.capture_array()
                     buf = picam2.capture_array()
-                    buf = picam2.capture_array()
+                    print(buf.shape)
                     cvimg = QImage(buf, width, height,QImage.Format_RGB888)
+                    print(type(cvimg))
+                    
+                    #painter = QPainter(cvimg)
+                    #painter.setPen(QColor(255, 255, 255))  # white color
+                    #painter.setFont(QFont("Arial", 20))
+                    #painter.drawText(10, 30, str(round(1/(time.time() - t), 2))) # coordinates for where to place the text
+                    #painter.end()
+            
                     pixmap = QPixmap(cvimg)
+                    print(type(pixmap))
                     if item == 'A':
                         image_label.setPixmap(pixmap)
                     elif item == 'B':
@@ -97,6 +113,9 @@ class WorkThread(QThread):
                         image_label4.setPixmap(pixmap)
                 except Exception as e:
                     print("capture_buffer: "+ str(e))
+                    
+            t = time.time()
+            this=True        
 
 app = QApplication([])
 window = QWidget()
@@ -106,22 +125,22 @@ layout_v = QVBoxLayout()
 image_label = QLabel()
 image_label2 = QLabel()
 image_label3 = QLabel()
-image_label4 = QLabel()
+#image_label4 = QLabel()
 
 # picam2 = Picamera2()
 
 work = WorkThread()
 
 if __name__ == "__main__":
-    image_label.setFixedSize(320, 240)
-    image_label2.setFixedSize(320, 240)
-    image_label3.setFixedSize(320, 240)
-    image_label4.setFixedSize(320, 240)
+    image_label.setFixedSize(width, height)
+    image_label2.setFixedSize(width, height)
+    image_label3.setFixedSize(width, height)
+    #image_label2.setFixedSize(320, 240)
     window.setWindowTitle("Qt Picamera2 Arducam Multi Camera Demo")
     layout_h.addWidget(image_label)    
     layout_h.addWidget(image_label2)
     layout_h2.addWidget(image_label3)
-    layout_h2.addWidget(image_label4)
+    #layout_h2.addWidget(image_label4)
     layout_v.addLayout(layout_h,20)
     layout_v.addLayout(layout_h2,20)
     window.setLayout(layout_v)
