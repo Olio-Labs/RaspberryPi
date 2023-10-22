@@ -91,18 +91,18 @@ class WorkThread(QThread):
                 try:
                     #buf = picam2.capture_array()
                     buf = picam2.capture_array()
-                    print(buf.shape)
+                    #print(buf.shape)
                     cvimg = QImage(buf, width, height,QImage.Format_RGB888)
-                    print(type(cvimg))
+                    #print(type(cvimg))
                     
-                    #painter = QPainter(cvimg)
-                    #painter.setPen(QColor(255, 255, 255))  # white color
-                    #painter.setFont(QFont("Arial", 20))
-                    #painter.drawText(10, 30, str(round(1/(time.time() - t), 2))) # coordinates for where to place the text
-                    #painter.end()
+                    painter = QPainter(cvimg)
+                    painter.setPen(QColor(255, 255, 255))  # white color
+                    painter.setFont(QFont("Arial", 20))
+                    painter.drawText(10, 30, str(round(1/(time.time() - t), 2))) # coordinates for where to place the text
+                    painter.end()
             
                     pixmap = QPixmap(cvimg)
-                    print(type(pixmap))
+                    #print(type(pixmap))
                     if item == 'A':
                         image_label.setPixmap(pixmap)
                     elif item == 'B':

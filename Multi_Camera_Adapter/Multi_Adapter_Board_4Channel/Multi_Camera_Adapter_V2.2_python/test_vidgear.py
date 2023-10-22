@@ -9,11 +9,13 @@ import time
 import os
 from vidgear import gears
 from libcamera import controls
+import cv2
 
 
 width = 640
 height = 480
-FPS = 30 
+FPS = 90 
+time_to_run = 10
 
 adapter_info = {  
     "A" : {   
@@ -55,7 +57,7 @@ def init_i2c(index):
     
     
     
-def record(self):
+def run():
     global picam2
     # picam2 = Picamera2()
     # picam2.configure( picam2.still_configuration(main={"size": (320, 240),"format": "BGR888"},buffer_count=1))
@@ -98,22 +100,39 @@ def record(self):
             time.sleep(0.1)
         except Exception as e:
             print("except: "+str(e))
+            
+    vid_out_params = {
+                        "-vcodec" : "libx264",
+                        "-preset" : "ultrafast",
+                        "-crf"    : 29
+                        }
+                        
+    writer = gears.WriteGear(
+                                 output='test.avi', 
+                                 **vid_out_params
+                                 )
+    
 
-    t = time.time()
-    this = True
-    while this:
+    t0 = time.time()
+    
+    while time.time() - t0 < time_to_run:
         
         for item in {"A", "B", "C"}: #,"B","C","D"}:
-            self.select_channel(item)
+            select_channel(item)
             time.sleep(0.02)
             try:
                 #buf = picam2.capture_array()
                 buf = picam2.capture_array()
                 frame = cv2.cvtColor(buf, cv2.COLOR_BGR2GRAY)
+                writer.write(frame)
                 
 
             except Exception as e:
                 print("capture_buffer: "+ str(e))
                 
-        t = time.time()
-        this=False   
+    writer.close()
+    picam2.close()
+    
+    
+if __name__ == "__main__":
+    run()
